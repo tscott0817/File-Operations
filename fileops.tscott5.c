@@ -101,25 +101,20 @@ int countWords(FILE *fp, char letter, int *count) {
 
         // Need to f-seek to value stored at this index
         fseek(fp, longNum, SEEK_SET); // Go to value stored in long
-
         Record record;
         fread(&record, sizeof(Record), 1, fp);
-        //char oldWord[MAXWORDLEN+1]; // Step 4.2; Holds the word from the record
-        //strcpy(oldWord, record.word);
 
         while (record.nextPos != 0) {
             fseek(fp, record.nextPos, SEEK_SET);
-            fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
+            fread(&record, sizeof(Record), 1, fp); 
             *count += 1;
         }
-        //printf("Number of words until spot found: %d\n", i);
 
         // If at at end of file
         if (record.nextPos == 0) {
             *count += 1;
             printf("No More Words Starting With: %c\n", letter);
         }
-
     }
     return 0;
 }

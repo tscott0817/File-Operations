@@ -186,37 +186,29 @@ int insertWord(FILE *fp, char *word) {
         char oldWord[MAXWORDLEN+1]; // Step 4.2; Holds the word from the record
         strcpy(oldWord, record.word);
 
-        printf("First word with letter '%c': %s\n", record.word[0], record.word);
+        printf("First word with letter '%c': %s | %ld\n", record.word[0], record.word, record.nextPos);
 
-        int done = 0;
-        while(!done) {
+        // This only gets last word since only the first word has a nextPos value
+        while (record.nextPos != 0) {
+            fseek(fp, record.nextPos, SEEK_SET);
+            fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
+            printf("Last Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); // Only gets last word
+        }
 
-            if (record.nextPos == 0) {
+        if (record.nextPos == 0) {
+            fseek(fp, longNum, SEEK_SET);
+            //strcpy(record.word, record.word); // Will replace first word with current
+            strcpy(record.word, oldWord);
+            record.nextPos = filesize;
+            fwrite(&record, sizeof(Record), 1, fp);
+            printf("Word Being Overwritten and New Position: %s | %d\n", record.word, record.nextPos);
 
-                fseek(fp, longNum, SEEK_SET);
-                //strcpy(record.word, record.word); // Will replace first word with current
-                strcpy(record.word, oldWord);
-                record.nextPos = filesize;
-                fwrite(&record, sizeof(Record), 1, fp);
-                printf("Word Being Overwritten and New Position: %s | %d\n", record.word, record.nextPos);
-
-                // New Record
-                fseek(fp, 0, SEEK_END);
-                strcpy(record.word, convertedWord);
-                record.nextPos = 0;
-                fwrite(&record, sizeof(Record), 1, fp);
-                printf("New Word Being Added and New Position: %s | %d\n\n", convertedWord, record.nextPos);
-                done = 1;
-            }
-            
-            else if (record.nextPos != 0) {
-                printf("Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); //
-                fseek(fp, record.nextPos, SEEK_SET);
-                fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
-                printf("Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); // Think this prints last word with letter
-            }
-            // fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
-
+            // New Record
+            fseek(fp, 0, SEEK_END);
+            strcpy(record.word, convertedWord);
+            record.nextPos = 0;
+            fwrite(&record, sizeof(Record), 1, fp);
+            printf("New Word Being Added and New Position: %s | %d\n\n", convertedWord, record.nextPos);
         }
 
         // Check first word

@@ -49,8 +49,8 @@ int main() {
     // Count Words
     int count;
     char letter = 'n';
-    //countWords(fp, letter, &count);
-    //printf("Number of words with letter '%c': %d\n", letter, &count);
+    countWords(fp, letter, &count);
+    printf("Number of words with letter '%c': %d\n", letter, count);
 
     fclose(fp);
     return 0;
@@ -82,8 +82,6 @@ int convertToLower(char *word, char *convertedWord) {
 
 int countWords(FILE *fp, char letter, int *count) {
     
-    count = (int *) malloc(sizeof(int));
-    
     // Make sure it's acutually a letter
     if (checkWord(&letter) != 0) {
         printf("Invalid Word");
@@ -96,7 +94,6 @@ int countWords(FILE *fp, char letter, int *count) {
     fread(&longNum, sizeof(long), 1, fp);
 
     if (longNum == 0) {
-        count = 0;
         printf("No Words Starting With: %c", letter);
     }
 
@@ -113,18 +110,17 @@ int countWords(FILE *fp, char letter, int *count) {
         while (record.nextPos != 0) {
             fseek(fp, record.nextPos, SEEK_SET);
             fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
-            count = count + 1;
+            *count += 1;
         }
         //printf("Number of words until spot found: %d\n", i);
 
         // If at at end of file
         if (record.nextPos == 0) {
-            count = count + 1;
+            *count += 1;
             printf("No More Words Starting With: %c\n", letter);
         }
 
     }
-    printf("Count from loop: %d\n", count);
     return 0;
 }
 
@@ -161,7 +157,8 @@ int insertWord(FILE *fp, char *word) {
     printf("Letter Index Place - 1: %lu\n", (convertedWord[0]-'a'));
     
     long longNum;
-    fread(&longNum, sizeof(long), 1, fp);
+    int num;
+    num = fread(&longNum, sizeof(long), 1, fp);
     if (longNum == 0) {
 
         printf("No word that starts with '%c'\n", convertedWord[0]);
@@ -181,7 +178,6 @@ int insertWord(FILE *fp, char *word) {
     else {
 
         printf("At least one word starting with: %c\n", convertedWord[0]);
-        printf("First Word With Letter '%c' Found At Position: %lu\n", convertedWord[0], longNum);
         
         // Need to f-seek to value stored at this index
         fseek(fp, longNum, SEEK_SET); // Go to value stored in long
@@ -191,12 +187,57 @@ int insertWord(FILE *fp, char *word) {
         char oldWord[MAXWORDLEN+1]; // Step 4.2; Holds the word from the record
         strcpy(oldWord, record.word);
 
+        printf("First word with letter '%c': %s | %ld\n", record.word[0], record.word, record.nextPos);
+
+        if (record.nextPos == 0) {
+
+            fseek(fp, longNum, SEEK_SET);
+            //strcpy(record.word, record.word); // Will replace first word with current
+            strcpy(record.word, oldWord);
+            record.nextPos = filesize;
+            fwrite(&record, sizeof(Record), 1, fp);
+            printf("Word Being Overwritten and New Position: %s | %d\n", record.word, record.nextPos);
+
+            // New Record
+            fseek(fp, 0, SEEK_END);
+            strcpy(record.word, convertedWord);
+            record.nextPos = 0;
+            fwrite(&record, sizeof(Record), 1, fp);
+            printf("New Word Being Added and New Position: %s | %d\n\n", convertedWord, record.nextPos);
+            //done = 1;
+        }
+
         int done = 0;
         while(!done) {
 
-            if (record.nextPos == 0) {
+            // if (record.nextPos == 0) {
 
-                fseek(fp, longNum, SEEK_SET);
+            //     fseek(fp, longNum, SEEK_SET);
+            //     //strcpy(record.word, record.word); // Will replace first word with current
+            //     strcpy(record.word, oldWord);
+            //     record.nextPos = filesize;
+            //     fwrite(&record, sizeof(Record), 1, fp);
+            //     printf("Word Being Overwritten and New Position: %s | %d\n", record.word, record.nextPos);
+
+            //     // New Record
+            //     fseek(fp, 0, SEEK_END);
+            //     strcpy(record.word, convertedWord);
+            //     record.nextPos = 0;
+            //     fwrite(&record, sizeof(Record), 1, fp);
+            //     printf("New Word Being Added and New Position: %s | %d\n\n", convertedWord, record.nextPos);
+            //     //done = 1;
+            // }
+            
+            if (record.nextPos != 0) {
+                printf("Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); // First Word
+                fseek(fp, record.nextPos, SEEK_SET);
+                fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
+                printf("Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); // Last Word
+            }
+
+            else {
+                fseek(fp, 0, SEEK_CUR);
+                //strcpy(record.word, record.word); // Will replace first word with current
                 strcpy(record.word, record.word);
                 record.nextPos = filesize;
                 fwrite(&record, sizeof(Record), 1, fp);
@@ -210,15 +251,15 @@ int insertWord(FILE *fp, char *word) {
                 printf("New Word Being Added and New Position: %s | %d\n\n", convertedWord, record.nextPos);
                 done = 1;
             }
-            
-            else if (record.nextPos != 0) {
-                fseek(fp, record.nextPos, SEEK_SET);
-                fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
-                printf("Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); // Think this prints last word with letter
-            }
             // fread(&record, sizeof(Record), 1, fp); // Think this will overwrite previous record variable
 
         }
+
+        // Check first word
+        fseek(fp, longNum, SEEK_SET); // Go to value stored in long
+        fread(&record, sizeof(Record), 1, fp);
+        printf("First Word: %s | %d\n", record.word, record.nextPos);
+
     }
     return 0;
 }

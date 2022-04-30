@@ -8,17 +8,18 @@
 #include <ctype.h>
 #include "fileops.tscott5.h"
 
+#define FILENAME "words.dat"
+
 int main() {
   
     // Opens/creates file for r/w
     FILE *fp;
-    char filename[32] = "words.dat";
+    char filename[32] = FILENAME;
     int fileExists = 0;
     fp = (FILE *) fopen(filename, "r+");
     if (fp != NULL) {
         fileExists = 1;
     }
-
 
     // Checks if something happend in file search/creation
     if (!fileExists) {
@@ -52,6 +53,7 @@ int main() {
     countWords(fp, letter, &count);
     printf("Number of words with letter '%c': %d\n", letter, count);
 
+    // Get Words
     fclose(fp);
     return 0;
 }
@@ -86,7 +88,7 @@ int countWords(FILE *fp, char letter, int *count) {
 
     // Make sure it's acutually a letter
     if (checkWord(&letter) != 0) {
-        printf("Invalid Word");
+        printf("Invalid Word\n");
         return 1;
     }
 
@@ -96,7 +98,7 @@ int countWords(FILE *fp, char letter, int *count) {
     fread(&longNum, sizeof(long), 1, fp);
 
     if (longNum == 0) {
-        printf("No Words Starting With: %c", letter);
+        printf("No Words Starting With: %c\n", letter);
     }
 
     else { 
@@ -128,7 +130,7 @@ char **getWords(FILE *fp, char letter) {
 
     // Make sure it's acutually a letter
     if (checkWord(&letter) != 0) {
-        printf("Invalid Word");
+        printf("Invalid Word\n");
         return NULL;
     }
 
@@ -138,7 +140,7 @@ char **getWords(FILE *fp, char letter) {
     fread(&longNum, sizeof(long), 1, fp);
 
     if (longNum == 0) {
-        printf("No Words Starting With: %c", letter);
+        printf("No Words Starting With: %c\n", letter);
     }
 
     else { 
@@ -166,8 +168,8 @@ int insertWord(FILE *fp, char *word) {
     
     char convertedWord[MAXWORDLEN+1]; 
     convertToLower(word, convertedWord); 
-    long letterPos, pos;
-    letterPos = 8 * (convertedWord[0] - 'a');
+    long pos, longNum, filesize, rc;
+    pos = 8*(convertedWord[0] - 'a'); // Starts at indexed value for letter
     Record record;
     
     // Make sure it's acutually a word
@@ -177,8 +179,6 @@ int insertWord(FILE *fp, char *word) {
     }
 
     // Get filesize
-    char rc;
-    long filesize;
     rc = fseek(fp, 0, SEEK_END);
     if (rc != 0) {
         printf("fseek() failed\n");
@@ -188,18 +188,19 @@ int insertWord(FILE *fp, char *word) {
     printf("File size: %d\n", filesize);
 
     // Find position in file 
-    fseek(fp, letterPos, SEEK_SET); // @Param: filepath ptr, # of bytes to offset, where to start pointer  
+    fseek(fp, pos, SEEK_SET); // @Param: filepath ptr, # of bytes to offset, where to start pointer  
     printf("Letter Index Place - 1: %ld\n", (convertedWord[0]-'a'));
-    
-    long longNum;
+
+    // Read the value held by the long (Position of first word with letter)
     fread(&longNum, sizeof(long), 1, fp);
     printf("First Word Pos: %ld\n", longNum);
 
+    // If no words with letter
     if (longNum == 0) {
 
         // Write the long into location of letter value
         printf("No word that starts with '%c'\n", convertedWord[0]);
-        fseek(fp, letterPos, SEEK_SET);
+        fseek(fp, pos, SEEK_SET);
         fwrite(&filesize, sizeof(long), 1, fp);
 
         // Write first word of letter to file
@@ -218,13 +219,14 @@ int insertWord(FILE *fp, char *word) {
         fread(&record, sizeof(Record), 1, fp);
         printf("\nFirst word with letter '%c': %s | %ld\n", record.word[0], record.word, record.nextPos);
 
+        // Check every next position until one is 0
         while (record.nextPos != 0) {
             fseek(fp, record.nextPos, SEEK_SET);
             fread(&record, sizeof(Record), 1, fp); 
             printf("Word Found Starting With: '%c': %s | %d\n", record.word[0], record.word, record.nextPos); 
         }
         
-        // Go back to the beginning of the read Record
+        // Go back to the beginning of the currently read Record
         pos = ftell(fp) - sizeof(Record);
         if (record.nextPos == 0) {
 

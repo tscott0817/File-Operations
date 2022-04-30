@@ -129,7 +129,6 @@ int insertWord(FILE *fp, char *word) {
     char convertedWord[MAXWORDLEN+1]; 
     convertToLower(word, convertedWord); 
     long seekPos = 8 * (convertedWord[0] - 'a');
-    printf("Seek Pos: %ld\n", seekPos);
     
     // Make sure it's acutually a word
     if (checkWord(convertedWord) != 0) {
@@ -174,38 +173,32 @@ int insertWord(FILE *fp, char *word) {
         
     }
 
-    // If there is already a word with that letter
     else {
 
         printf("At least one word starting with: %c\n", convertedWord[0]);
+
         int pos;
         pos = ftell(fp) - sizeof(long);
-        // long curPos;
-        // fread(&curPos, sizeof(long), 1, fp);
         printf("Current Position: %ld\n", pos);
         Record record;
+
         fseek(fp, longNum, SEEK_SET); // Go to value stored in long
         fread(&record, sizeof(Record), 1, fp);
         printf("Value Stored In Long Now: %ld\n", longNum);
-
         printf("First word with letter '%c': %s | %ld\n", record.word[0], record.word, record.nextPos);
 
-        // This only gets last word since only the first word has a nextPos value
         while (record.nextPos != 0) {
             fseek(fp, record.nextPos, SEEK_SET);
             fread(&record, sizeof(Record), 1, fp); 
-            printf("Last Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); // Only gets last word
+            printf("Last Word Found Starting With: '%c': %s | Next Pos: %d\n", record.word[0], record.word, record.nextPos); 
         }
         
         int curPos;
         curPos = ftell(fp) - 40;
-        // long curPos;
-        // fread(&curPos, sizeof(long), 1, fp);
         printf("Current Position: %ld\n", curPos);
         if (record.nextPos == 0) {
             printf("Word At Current Pos: %s | %ld\n", record.word, record.nextPos);
             fseek(fp, curPos, SEEK_SET);
-            //fread(&record, sizeof(Record), 1, fp);
             Record recordNew;
             strcpy(recordNew.word, record.word); 
             recordNew.nextPos = filesize;
@@ -223,7 +216,6 @@ int insertWord(FILE *fp, char *word) {
             printf("After Writing Word: %s | %d\n\n", newRecord.word, newRecord.nextPos);
 
         }
-
     }
     return 0;
 }

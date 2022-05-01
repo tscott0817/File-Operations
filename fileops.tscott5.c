@@ -135,17 +135,13 @@ int countWords(FILE *fp, char letter, int *count) {
 char **getWords(FILE *fp, char letter) {
 
     char **rtnVal, *word;
-    long seekPos = 8*(letter - 'a');
+    long pos = 8*(letter - 'a');
     int wordLen, count, i;
     countWords(fp, letter, &count);
     Record record;
+    i = 0;
 
     printf("Get Word Letter: %c\n", letter);
-    // Make sure it's acutually a letter
-    // if (checkWord(&letter) != 0) {
-    //     printf("Invalid Word\n");
-    //     return NULL;
-    // }
 
     rtnVal = (char**) malloc((count+1) * sizeof(char *));
     if (count == 0) {
@@ -154,7 +150,7 @@ char **getWords(FILE *fp, char letter) {
     }
     
     // Start at first word
-    fseek(fp, seekPos, SEEK_SET);  
+    fseek(fp, pos, SEEK_SET);  
     long longNum;
     fread(&longNum, sizeof(long), 1, fp);
 
@@ -166,25 +162,30 @@ char **getWords(FILE *fp, char letter) {
     wordLen = k;
     word = (char *) malloc((wordLen+1) * sizeof(char));
     
-    strcpy(word, record.word);
+    //strcpy(word, record.word);
+    strncpy(word, record.word, wordLen);
     word[wordLen] = '\0';
 
     rtnVal[i] = word;
     i += 1;
-
+    pos = ftell(fp);
+    printf("Current Pos In Get Word: %ld\n", pos);
     printf("First Word: %s | %ld\n", record.word, record.nextPos);
 
     while (record.nextPos != 0) {
         fseek(fp, record.nextPos, SEEK_SET);
         fread(&record, sizeof(Record), 1, fp); 
-            
+       
+        pos = ftell(fp);
+        printf("Current Pos In Get Word Loop: %ld\n", pos);
+       
         int j = 0;
         for (j = 0; record.word[j] != '\0'; ++j);       
         wordLen = j;
         word = (char *) malloc((wordLen+1) * sizeof(char));
 
-        strcpy(word, record.word);
-        //strncpy(word, record.word, wordLen);
+        //strcpy(word, record.word);
+        strncpy(word, record.word, wordLen);
         word[wordLen] = '\0';
 
         rtnVal[i] = word;

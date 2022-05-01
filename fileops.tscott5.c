@@ -19,6 +19,7 @@ int main() {
     int fileExists = 0;
     fp = (FILE *) fopen(filename, "r+");
     if (fp != NULL) {
+        printf("File Foud: %s\n", FILENAME);
         fileExists = 1;
     }
 
@@ -26,7 +27,7 @@ int main() {
     if (!fileExists) {
         fp = (FILE *) fopen(filename, "w+");
         if (fp == NULL) {
-            printf("cannot open file '%s'\n", filename);
+            printf("Cannot open file '%s'\n", filename);
             return 8;
         }
 
@@ -62,6 +63,7 @@ int main() {
         //printf("word[%d] is |%s|\n", i, words[i]);
         i = i + 1;
     }
+    printf("\n");
 
     fclose(fp);
     return 0;

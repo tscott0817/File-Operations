@@ -16,7 +16,8 @@ int main() {
     // Opens/creates file for r/w
     FILE *fp;
     char filename[32] = FILENAME;
-    int fileExists = 0;
+    int fileExists, rc;
+    fileExists = 0;
     fp = (FILE *) fopen(filename, "r+");
     if (fp != NULL) {
         printf("File Foud: %s\n", FILENAME);
@@ -96,6 +97,7 @@ int convertToLower(char *word, char *convertedWord) {
 int countWords(FILE *fp, char letter, int *count) {
     
     long seekPos = 8 * (letter - 'a');
+    int rc;
 
     // Make sure it's acutually a letter
     if (checkWord(&letter) != 0) {
@@ -194,7 +196,8 @@ int insertWord(FILE *fp, char *word) {
     
     char convertedWord[MAXWORDLEN+1]; 
     convertToLower(word, convertedWord); 
-    long pos, longNum, filesize, rc;
+    long pos, longNum, filesize;
+    int rc;
     pos = 8*(convertedWord[0] - 'a'); // Starts at indexed value for letter
     Record record;
     
@@ -213,8 +216,12 @@ int insertWord(FILE *fp, char *word) {
     filesize = ftell(fp);
 
     // Find position in file 
-    fseek(fp, pos, SEEK_SET); // @Param: filepath ptr, # of bytes to offset, where to start pointer  
-
+    rc = fseek(fp, pos, SEEK_SET); // @Param: filepath ptr, # of bytes to offset, where to start pointer  
+    if (rc != 0) {
+      printf("fseek() failed\n");
+      fclose(fp);
+      return rc;
+    }
     // Read the value held by the long (Position of first word with letter)
     fread(&longNum, sizeof(long), 1, fp);
 
@@ -222,11 +229,21 @@ int insertWord(FILE *fp, char *word) {
     if (longNum == 0) {
 
         // Write the long into location of letter value
-        fseek(fp, pos, SEEK_SET);
+        rc = fseek(fp, pos, SEEK_SET);
+        if (rc != 0) {
+            printf("fseek() failed\n");
+            fclose(fp);
+        return rc;
+        }
         fwrite(&filesize, sizeof(long), 1, fp);
 
         // Write first word of letter to file
-        fseek(fp, 0, SEEK_END);
+        rc = fseek(fp, 0, SEEK_END);
+        if (rc != 0) {
+            printf("fseek() failed\n");
+            fclose(fp);
+            return rc;
+        }
         strcpy(record.word, convertedWord);
         record.nextPos = 0; 
         fwrite(&record, sizeof(Record), 1, fp);
@@ -236,12 +253,22 @@ int insertWord(FILE *fp, char *word) {
     else {
 
         // Go to value stored in long (The first word with letter)
-        fseek(fp, longNum, SEEK_SET); 
+        rc = fseek(fp, longNum, SEEK_SET); 
+        if (rc != 0) {
+            printf("fseek() failed\n");
+            fclose(fp);
+            return rc;
+        }
         fread(&record, sizeof(Record), 1, fp);
 
         // Check every next position until one is 0
         while (record.nextPos != 0) {
-            fseek(fp, record.nextPos, SEEK_SET);
+            rc = fseek(fp, record.nextPos, SEEK_SET);
+            if (rc != 0) {
+                printf("fseek() failed\n");
+                fclose(fp);
+                return rc;
+            }
             fread(&record, sizeof(Record), 1, fp); 
         }
         
@@ -250,13 +277,23 @@ int insertWord(FILE *fp, char *word) {
         if (record.nextPos == 0) {
 
             // Overwrite current word and nextPos
-            fseek(fp, pos, SEEK_SET);
+            rc = fseek(fp, pos, SEEK_SET);
+            if (rc != 0) {
+                printf("fseek() failed\n");
+                fclose(fp);
+                return rc;
+            }
             strcpy(record.word, record.word); 
             record.nextPos = filesize;
             fwrite(&record, sizeof(Record), 1, fp);
 
             // Create new record at end of file
-            fseek(fp, 0, SEEK_END);
+            rc = fseek(fp, 0, SEEK_END);
+            if (rc != 0) {
+                printf("fseek() failed\n");
+                fclose(fp);
+                return rc;
+            }
             strcpy(record.word, convertedWord);
             record.nextPos = 0;
             fwrite(&record, sizeof(Record), 1, fp);

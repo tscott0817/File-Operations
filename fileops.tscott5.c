@@ -59,10 +59,10 @@ int main() {
 
     char **words;
     words = getWords(fp, LETTER_TO_SEARCH);
-    printf("Word From Array: %s\n", *words);
-    for (int i = 0; words[i] != NULL; i++) {
-        // printf("Word From Array: %s\n", **words[i]);
-        printf("Word From Array: %s\n", *words);
+    int i = 0;
+    while (words[i] != NULL) {
+        printf("word[%d] is |%s|\n", i, words[i]);
+        i = i + 1;
     }
 
     fclose(fp);
@@ -136,10 +136,9 @@ char **getWords(FILE *fp, char letter) {
 
     char **rtnVal, *word;
     long pos = 8*(letter - 'a');
-    int wordLen, count, i;
+    int wordLen, count, i, index, start;
     countWords(fp, letter, &count);
     Record record;
-    i = 0;
 
     printf("Get Word Letter: %c\n", letter);
 
@@ -148,6 +147,35 @@ char **getWords(FILE *fp, char letter) {
         rtnVal[0] = NULL;
         return rtnVal;
     }
+
+    // i = 0;
+    // index = 0;
+    // while (i < count) {
+    //     while (i < count && letter[i] == ' ') {
+    //         i = i + 1;
+    //     }
+
+    //     if (i < count) {
+    //         // found the start of a word
+    //         start = i;
+    //         while (i < count && letter[i] != ' ') {
+    //             i = i + 1;
+    //         }
+    //         //printf("from pos %d to %d\n", start, i-1);
+    //         wordLen = i-start;
+    //         word = (char *) malloc((wordLen + 1) * sizeof(char));
+    //         strcpy(word, record.word);
+    //         //strncpy(word, record.word, wordLen);
+    //         //strncpy(word, &letter[start], record.word);
+    //         word[wordLen] = '\0';
+    //         //printf("word is |%s|\n", word);
+    //         rtnval[index] = word;
+    //         index = index + 1;
+    //     }
+    // }
+
+    // rtnval[index] = NULL;
+    // return rtnval;
     
     // Start at first word
     fseek(fp, pos, SEEK_SET);  
@@ -193,6 +221,7 @@ char **getWords(FILE *fp, char letter) {
         long longPos = record.nextPos;
         printf("Next Word: %s | %ld\n", word, longPos);   
     }
+    //rtnVal[i] = word;
     // Make last value in array NULL
     rtnVal[i] = NULL;
     return rtnVal;

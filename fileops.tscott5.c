@@ -61,7 +61,6 @@ int main() {
     int i = 0;
     while (words[i] != NULL) {
         printf("Word [%d] With Letter '%c': %s\n", i, LETTER_TO_SEARCH, words[i]);
-        //printf("word[%d] is |%s|\n", i, words[i]);
         i = i + 1;
     }
     printf("\n");

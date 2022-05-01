@@ -53,15 +53,13 @@ int main() {
     countWords(fp, LETTER_TO_SEARCH, &count);
     printf("Number of words with letter '%c': %d\n\n", LETTER_TO_SEARCH, count);
 
-    /*
-     * getWords() not 100% working 
-     */ 
-
+    // Get Words
     char **words;
     words = getWords(fp, LETTER_TO_SEARCH);
     int i = 0;
     while (words[i] != NULL) {
-        printf("word[%d] is |%s|\n", i, words[i]);
+        printf("Word [%d] With Letter '%c': %s\n", i, LETTER_TO_SEARCH, words[i]);
+        //printf("word[%d] is |%s|\n", i, words[i]);
         i = i + 1;
     }
 
@@ -140,42 +138,11 @@ char **getWords(FILE *fp, char letter) {
     countWords(fp, letter, &count);
     Record record;
 
-    printf("Get Word Letter: %c\n", letter);
-
     rtnVal = (char**) malloc((count+1) * sizeof(char *));
     if (count == 0) {
         rtnVal[0] = NULL;
         return rtnVal;
     }
-
-    // i = 0;
-    // index = 0;
-    // while (i < count) {
-    //     while (i < count && letter[i] == ' ') {
-    //         i = i + 1;
-    //     }
-
-    //     if (i < count) {
-    //         // found the start of a word
-    //         start = i;
-    //         while (i < count && letter[i] != ' ') {
-    //             i = i + 1;
-    //         }
-    //         //printf("from pos %d to %d\n", start, i-1);
-    //         wordLen = i-start;
-    //         word = (char *) malloc((wordLen + 1) * sizeof(char));
-    //         strcpy(word, record.word);
-    //         //strncpy(word, record.word, wordLen);
-    //         //strncpy(word, &letter[start], record.word);
-    //         word[wordLen] = '\0';
-    //         //printf("word is |%s|\n", word);
-    //         rtnval[index] = word;
-    //         index = index + 1;
-    //     }
-    // }
-
-    // rtnval[index] = NULL;
-    // return rtnval;
     
     // Start at first word
     fseek(fp, pos, SEEK_SET);  
@@ -185,44 +152,38 @@ char **getWords(FILE *fp, char letter) {
     fseek(fp, longNum, SEEK_SET);
     fread(&record, sizeof(record), 1, fp);
 
+    // Get length of word and allocate space
     int k = 0;
     for (k = 0; record.word[k] != '\0'; ++k);
     wordLen = k;
     word = (char *) malloc((wordLen+1) * sizeof(char));
     
-    //strcpy(word, record.word);
+    // Copy word and set end of string char
     strncpy(word, record.word, wordLen);
     word[wordLen] = '\0';
 
+    // Put word in array
     rtnVal[i] = word;
     i += 1;
-    pos = ftell(fp);
-    printf("Current Pos In Get Word: %ld\n", pos);
-    printf("First Word: %s | %ld\n", record.word, record.nextPos);
 
     while (record.nextPos != 0) {
+
         fseek(fp, record.nextPos, SEEK_SET);
         fread(&record, sizeof(Record), 1, fp); 
        
-        pos = ftell(fp);
-        printf("Current Pos In Get Word Loop: %ld\n", pos);
-       
+        // Get length of word and allocate space
         int j = 0;
         for (j = 0; record.word[j] != '\0'; ++j);       
         wordLen = j;
         word = (char *) malloc((wordLen+1) * sizeof(char));
 
-        //strcpy(word, record.word);
         strncpy(word, record.word, wordLen);
         word[wordLen] = '\0';
 
         rtnVal[i] = word;
         i += 1;
-        long longPos = record.nextPos;
-        printf("Next Word: %s | %ld\n", word, longPos);   
+        long longPos = record.nextPos; // No idea why, but removing this causes error?
     }
-    //rtnVal[i] = word;
-    // Make last value in array NULL
     rtnVal[i] = NULL;
     return rtnVal;
 }
@@ -248,21 +209,17 @@ int insertWord(FILE *fp, char *word) {
         return rc;
     }
     filesize = ftell(fp);
-    printf("File size: %d\n", filesize);
 
     // Find position in file 
     fseek(fp, pos, SEEK_SET); // @Param: filepath ptr, # of bytes to offset, where to start pointer  
-    printf("Letter Index Place - 1: %ld\n", (convertedWord[0]-'a'));
 
     // Read the value held by the long (Position of first word with letter)
     fread(&longNum, sizeof(long), 1, fp);
-    printf("First Word Pos: %ld\n", longNum);
 
     // If no words with letter
     if (longNum == 0) {
 
         // Write the long into location of letter value
-        printf("No word that starts with '%c'\n", convertedWord[0]);
         fseek(fp, pos, SEEK_SET);
         fwrite(&filesize, sizeof(long), 1, fp);
 
@@ -271,8 +228,7 @@ int insertWord(FILE *fp, char *word) {
         strcpy(record.word, convertedWord);
         record.nextPos = 0; 
         fwrite(&record, sizeof(Record), 1, fp);
-        printf("Writing First Word With '%c' at Position %d: %s | Next Pos: %d\n\n", convertedWord[0], filesize, record.word, record.nextPos);
-        
+     
     }
 
     else {
@@ -280,13 +236,11 @@ int insertWord(FILE *fp, char *word) {
         // Go to value stored in long (The first word with letter)
         fseek(fp, longNum, SEEK_SET); 
         fread(&record, sizeof(Record), 1, fp);
-        printf("\nFirst word with letter '%c': %s | %ld\n", record.word[0], record.word, record.nextPos);
 
         // Check every next position until one is 0
         while (record.nextPos != 0) {
             fseek(fp, record.nextPos, SEEK_SET);
             fread(&record, sizeof(Record), 1, fp); 
-            printf("Word Found Starting With: '%c': %s | %d\n", record.word[0], record.word, record.nextPos); 
         }
         
         // Go back to the beginning of the currently read Record
@@ -294,19 +248,16 @@ int insertWord(FILE *fp, char *word) {
         if (record.nextPos == 0) {
 
             // Overwrite current word and nextPos
-            printf("Word At Current Pos: %s | %ld\n", record.word, record.nextPos);
             fseek(fp, pos, SEEK_SET);
             strcpy(record.word, record.word); 
             record.nextPos = filesize;
             fwrite(&record, sizeof(Record), 1, fp);
-            printf("Word Being Overwritten and New Position: %s | %d\n", record.word, record.nextPos);
 
             // Create new record at end of file
             fseek(fp, 0, SEEK_END);
             strcpy(record.word, convertedWord);
             record.nextPos = 0;
             fwrite(&record, sizeof(Record), 1, fp);
-            printf("New Word Being Added and New Position: %s | %d\n\n", record.word, record.nextPos);
 
         }
     }

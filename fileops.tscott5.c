@@ -197,7 +197,7 @@ int insertWord(FILE *fp, char *word) {
     char convertedWord[MAXWORDLEN+1]; 
     convertToLower(word, convertedWord); 
     long pos, longNum, filesize;
-    int rc;
+    int rc, rn;
     pos = 8*(convertedWord[0] - 'a'); // Starts at indexed value for letter
     Record record;
     
@@ -223,7 +223,12 @@ int insertWord(FILE *fp, char *word) {
       return rc;
     }
     // Read the value held by the long (Position of first word with letter)
-    fread(&longNum, sizeof(long), 1, fp);
+    rn = fread(&longNum, sizeof(long), 1, fp);
+    if (rn != 1) {
+        printf("ERROR: fread() failed to read a value\n");
+        fclose(fp);
+        return 9;
+    }
 
     // If no words with letter
     if (longNum == 0) {
@@ -235,7 +240,12 @@ int insertWord(FILE *fp, char *word) {
             fclose(fp);
         return rc;
         }
-        fwrite(&filesize, sizeof(long), 1, fp);
+        rn = fwrite(&filesize, sizeof(long), 1, fp);
+        if (rn != 1) {
+            printf("ERROR: fwrite() failed to write a value\n");
+            fclose(fp);
+            return 8;
+        }
 
         // Write first word of letter to file
         rc = fseek(fp, 0, SEEK_END);
@@ -246,7 +256,12 @@ int insertWord(FILE *fp, char *word) {
         }
         strcpy(record.word, convertedWord);
         record.nextPos = 0; 
-        fwrite(&record, sizeof(Record), 1, fp);
+        rn = fwrite(&record, sizeof(Record), 1, fp);
+        if (rn != 1) {
+            printf("ERROR: fwrite() failed to write a value\n");
+            fclose(fp);
+            return 8;
+        }
      
     }
 
@@ -259,7 +274,12 @@ int insertWord(FILE *fp, char *word) {
             fclose(fp);
             return rc;
         }
-        fread(&record, sizeof(Record), 1, fp);
+        rn = fread(&record, sizeof(Record), 1, fp);
+        if (rn != 1) {
+            printf("ERROR: fread() failed to read a value\n");
+            fclose(fp);
+            return 8;
+        }
 
         // Check every next position until one is 0
         while (record.nextPos != 0) {
@@ -269,7 +289,12 @@ int insertWord(FILE *fp, char *word) {
                 fclose(fp);
                 return rc;
             }
-            fread(&record, sizeof(Record), 1, fp); 
+            rn = fread(&record, sizeof(Record), 1, fp); 
+            if (rn != 1) {
+                printf("ERROR: fread() failed to read a value\n");
+                fclose(fp);
+                return 9;
+            }
         }
         
         // Go back to the beginning of the currently read Record
@@ -285,7 +310,12 @@ int insertWord(FILE *fp, char *word) {
             }
             strcpy(record.word, record.word); 
             record.nextPos = filesize;
-            fwrite(&record, sizeof(Record), 1, fp);
+            rn = fwrite(&record, sizeof(Record), 1, fp);
+            if (rn != 1) {
+                printf("ERROR: fwrite() failed to write a value\n");
+                fclose(fp);
+                return 8;
+            }
 
             // Create new record at end of file
             rc = fseek(fp, 0, SEEK_END);
@@ -296,7 +326,12 @@ int insertWord(FILE *fp, char *word) {
             }
             strcpy(record.word, convertedWord);
             record.nextPos = 0;
-            fwrite(&record, sizeof(Record), 1, fp);
+            rn = fwrite(&record, sizeof(Record), 1, fp);
+            if (rn != 1) {
+                printf("ERROR: fwrite() failed to write a value\n");
+                fclose(fp);
+                return 8;
+            }
 
         }
     }

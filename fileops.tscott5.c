@@ -9,6 +9,7 @@
 #include "fileops.tscott5.h"
 
 #define FILENAME "words.dat"
+#define LETTER_TO_SEARCH 'n'
 
 int main() {
   
@@ -49,11 +50,21 @@ int main() {
 
     // Count Words
     int count;
-    char letter = 'n';
-    countWords(fp, letter, &count);
-    printf("Number of words with letter '%c': %d\n", letter, count);
+    countWords(fp, LETTER_TO_SEARCH, &count);
+    printf("Number of words with letter '%c': %d\n\n", LETTER_TO_SEARCH, count);
 
-    // Get Words
+    /*
+     * getWords() not 100% working 
+     */ 
+
+    char **words;
+    words = getWords(fp, LETTER_TO_SEARCH);
+    printf("Word From Array: %s\n", *words);
+    for (int i = 0; words[i] != NULL; i++) {
+        // printf("Word From Array: %s\n", **words[i]);
+        printf("Word From Array: %s\n", *words);
+    }
+
     fclose(fp);
     return 0;
 }
@@ -123,45 +134,67 @@ int countWords(FILE *fp, char letter, int *count) {
 
 char **getWords(FILE *fp, char letter) {
 
-    char **rtnVal;
-    rtnVal = (char**) malloc(sizeof(char *));
-    rtnVal[0] = NULL;
-    long seekPos = 8 * (letter - 'a');
+    char **rtnVal, *word;
+    long seekPos = 8*(letter - 'a');
+    int wordLen, count, i;
+    countWords(fp, letter, &count);
+    Record record;
 
+    printf("Get Word Letter: %c\n", letter);
     // Make sure it's acutually a letter
-    if (checkWord(&letter) != 0) {
-        printf("Invalid Word\n");
-        return NULL;
-    }
+    // if (checkWord(&letter) != 0) {
+    //     printf("Invalid Word\n");
+    //     return NULL;
+    // }
 
+    rtnVal = (char**) malloc((count+1) * sizeof(char *));
+    if (count == 0) {
+        rtnVal[0] = NULL;
+        return rtnVal;
+    }
+    
     // Start at first word
     fseek(fp, seekPos, SEEK_SET);  
     long longNum;
     fread(&longNum, sizeof(long), 1, fp);
 
-    if (longNum == 0) {
-        printf("No Words Starting With: %c\n", letter);
-    }
+    fseek(fp, longNum, SEEK_SET);
+    fread(&record, sizeof(record), 1, fp);
 
-    else { 
-
-        fseek(fp, longNum, SEEK_SET); // Go to value stored in long
-        Record record;
-        fread(&record, sizeof(Record), 1, fp);
-
-        while (record.nextPos != 0) {
-            fseek(fp, record.nextPos, SEEK_SET);
-            fread(&record, sizeof(Record), 1, fp); 
-            
-        }
-
-        // If at at end of file
-        if (record.nextPos == 0) {
+    int k = 0;
+    for (k = 0; record.word[k] != '\0'; ++k);
+    wordLen = k;
+    word = (char *) malloc((wordLen+1) * sizeof(char));
     
-            printf("No More Words Starting With: %c\n", letter);
-        }
+    strcpy(word, record.word);
+    word[wordLen] = '\0';
+
+    rtnVal[i] = word;
+    i += 1;
+
+    printf("First Word: %s | %ld\n", record.word, record.nextPos);
+
+    while (record.nextPos != 0) {
+        fseek(fp, record.nextPos, SEEK_SET);
+        fread(&record, sizeof(Record), 1, fp); 
+            
+        int j = 0;
+        for (j = 0; record.word[j] != '\0'; ++j);       
+        wordLen = j;
+        word = (char *) malloc((wordLen+1) * sizeof(char));
+
+        strcpy(word, record.word);
+        //strncpy(word, record.word, wordLen);
+        word[wordLen] = '\0';
+
+        rtnVal[i] = word;
+        i += 1;
+        long longPos = record.nextPos;
+        printf("Next Word: %s | %ld\n", word, longPos);   
     }
-    return 0;
+    // Make last value in array NULL
+    rtnVal[i] = NULL;
+    return rtnVal;
 }
 
 int insertWord(FILE *fp, char *word) {
@@ -174,7 +207,7 @@ int insertWord(FILE *fp, char *word) {
     
     // Make sure it's acutually a word
     if (checkWord(convertedWord) != 0) {
-        printf("Invalid Word");
+        printf("Invalid Word\n");
         return 1;
     }
 
